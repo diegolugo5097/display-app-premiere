@@ -5,6 +5,17 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+// src/index.js
+// ...tu bootstrap habitual (ReactDOM.createRoot / render, etc.)
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .catch((err) => console.warn('SW register failed', err));
+  });
+}
+
 root.render(
   <React.StrictMode>
     <App />
