@@ -1,0 +1,13 @@
+[build]
+  publish = "build"
+
+[[redirects]]
+  from = "/media/*"
+  to = "https://control-app-premiere.netlify.app/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -6,6 +6,12 @@ const socket = io('https://panel-server-premire.onrender.com', {
   transports: ['websocket'],
 });
 
+
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+export const globalAudioCtx = new AudioContextClass();
+
+
+
 /* ================== ASSETS por proxy /media (sin CORS) ================== */
 /**
  * Normaliza cualquier url recibida por socket:
@@ -60,6 +66,28 @@ function App() {
 
   const accentColor = dangerMode ? '#ef4444' : '#4ade80';
   const accentGlow = dangerMode ? 'rgba(239,68,68,.5)' : 'rgba(74,222,128,.5)';
+
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (globalAudioCtx.state === "suspended") {
+        globalAudioCtx.resume().then(() => {
+          console.log("🔊 Audio global desbloqueado.");
+        });
+      }
+      document.removeEventListener("click", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
+    };
+
+    document.addEventListener("click", unlockAudio);
+    document.addEventListener("keydown", unlockAudio);
+
+    return () => {
+      document.removeEventListener("click", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
+    };
+  }, []);
+
 
   useEffect(() => {
     const onSetHero = ({ hero: h }) => {
@@ -122,6 +150,78 @@ function App() {
     };
   }, []);
 
+
+  useEffect(() => {
+    const onPlaySound = async ({ type }) => {
+      let file = "";
+      if (type === "modal_open") file = "/modal-open.mp3";
+      else if (type === "modal_close") file = "/modal-close.mp3";
+      else return;
+
+      try {
+        // Usa el contexto global (ya desbloqueado)
+        const res = await fetch(file);
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = await globalAudioCtx.decodeAudioData(arrayBuffer);
+
+        const source = globalAudioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(globalAudioCtx.destination);
+        source.start(0);
+      } catch (err) {
+        console.warn("No se pudo reproducir sonido:", err);
+      }
+    };
+
+    socket.on("play_sound", onPlaySound);
+    return () => socket.off("play_sound", onPlaySound);
+  }, []);
+
+
+  useEffect(() => {
+    const ambientSound = document.getElementById("ambientSound");
+    const pulseSound = document.getElementById("pulseSound");
+
+    // Intenta reproducir automáticamente
+    const playAll = async () => {
+      try {
+        await ambientSound.play();
+        await pulseSound.play();
+
+        // 🔊 Activa volumen gradualmente
+        setTimeout(() => {
+          ambientSound.muted = false;
+          pulseSound.muted = false;
+
+          let v = 0;
+          const fade = setInterval(() => {
+            v += 0.02;
+            ambientSound.volume = Math.min(v, 0.4);
+            pulseSound.volume = Math.min(v * 0.6, 0.25);
+            if (v >= 0.4) clearInterval(fade);
+          }, 100);
+        }, 800);
+      } catch (err) {
+        console.warn("El navegador bloqueó el autoplay, intentando fallback...");
+        // Si lo bloquea, lo activa en el primer clic o toque
+        const unlock = () => {
+          ambientSound.play();
+          pulseSound.play();
+          document.removeEventListener("click", unlock);
+        };
+        document.addEventListener("click", unlock);
+      }
+    };
+
+    playAll();
+
+    return () => {
+      ambientSound.pause();
+      pulseSound.pause();
+    };
+  }, []);
+
+
   return (
     <div style={styles.screen}>
       {/* Animaciones globales de HUD con color dinámico */}
@@ -171,6 +271,9 @@ function App() {
     </div>
   );
 }
+
+
+
 
 /* ---------------- MEDIA DE FONDO ---------------- */
 function HeroBackgroundMedia({ imageUrl, videoUrl, name }) {
@@ -246,6 +349,9 @@ function HUDOverlay({ hero, dangerMode, accentColor }) {
           }}
         />
       </div>
+
+      <audio id="ambientSound" src="/fondo-ambiental.mp3" loop />
+      <audio id="pulseSound" src="/pulso-electronico.mp3" loop />
 
       <div style={{ ...styles.topRightBlock, boxShadow: `0 0 25px ${accentColor}44` }}>
         <div style={styles.hudLineRow}>
