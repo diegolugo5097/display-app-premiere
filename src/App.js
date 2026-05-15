@@ -596,7 +596,7 @@ function RightInfoPanel({ hero, accentColor, animateIn }) {
           {hero.medical.notes || "Sin observaciones."}
         </div>
         <div style={styles.logoPremite}>
-          <img src="/logo512.png" width={100} />
+          <img src="/logo512.png" alt="Logo Premiere" width={100} />
         </div>
       </div>
     </div>

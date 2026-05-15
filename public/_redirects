@@ -1,2 +1,2 @@
-/media/*  https://control-app-premiere.netlify.app/:splat  200!
+/media/*  https://capsula-premiere-control.netlify.app/:splat  200!
 /*        /index.html 200
