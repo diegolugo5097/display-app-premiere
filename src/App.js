@@ -24,11 +24,13 @@ function normalizeAssetUrl(raw) {
   // Limpia prefijo "public/"
   url = url.replace(/^\/?public\//i, "");
 
-  // Si viene absoluta (http/https), extrae solo la ruta (/ALIEN.mp4)
-  const abs = url.match(/^https?:\/\/[^/]+(\/.*)$/i);
-  if (abs) url = abs[1];
+  // Si viene absoluta: "https://..." → retornar directo sin proxy
+  if (/^https?:\/\//i.test(url)) return url;
 
-  // Asegura slash inicial y antepone el prefijo del proxy
+  // Si viene con slash antes de la URL absoluta: "/https://..." → quitar el slash
+  if (/^\/https?:\/\//i.test(url)) return url.slice(1);
+
+  // URL relativa → pasar por el proxy /media
   if (!url.startsWith("/")) url = `/${url}`;
   return `/media${encodeURI(url)}`;
 }
@@ -119,8 +121,10 @@ function App() {
       // ✅ Pide al Service Worker que precachee video + imagen
       if ("serviceWorker" in navigator) {
         const urls = [];
-        if (h?.videoUrl) urls.push(normalizeAssetUrl(h.videoUrl));
-        if (h?.imageUrl) urls.push(normalizeAssetUrl(h.imageUrl));
+        if (h?.videoUrl && !h.videoUrl.startsWith("http"))
+          urls.push(normalizeAssetUrl(h.videoUrl));
+        if (h?.imageUrl && !h.imageUrl.startsWith("http"))
+          urls.push(normalizeAssetUrl(h.imageUrl));
         if (urls.length) {
           navigator.serviceWorker.ready.then((reg) => {
             reg.active?.postMessage({
@@ -326,7 +330,6 @@ function HeroBackgroundMedia({ imageUrl, videoUrl, name }) {
         loop
         playsInline
         preload="auto"
-        crossOrigin="anonymous"
         onError={(e) => console.warn("Video no cargó:", videoUrl, e)}
       />
     );
