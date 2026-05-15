@@ -3,7 +3,7 @@
 
 [[redirects]]
   from = "/media/*"
-  to = "https://control-app-premiere.netlify.app/:splat"
+  to = "https://control-app-premiere.vercel.app//:splat"
   status = 200
   force = true
 

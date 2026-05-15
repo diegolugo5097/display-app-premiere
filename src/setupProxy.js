@@ -1,13 +1,13 @@
 // display-app/src/setupProxy.js
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const { createProxyMiddleware } = require("http-proxy-middleware");
 
 module.exports = function (app) {
   app.use(
-    '/media',
+    "/media",
     createProxyMiddleware({
-      target: 'https://control-app-premiere.netlify.app',
+      target: "https://control-app-premiere.vercel.app/",
       changeOrigin: true,
-      pathRewrite: { '^/media': '' }, // /media/ALIEN.mp4 -> /ALIEN.mp4
-    })
+      pathRewrite: { "^/media": "" }, // /media/ALIEN.mp4 -> /ALIEN.mp4
+    }),
   );
 };
